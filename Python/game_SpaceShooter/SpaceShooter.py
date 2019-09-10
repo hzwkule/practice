@@ -11,8 +11,6 @@ BLUE = (0,0,255)
 
 center_x = center_y = 300
 arrow_key_status = [0,0,0,0]
-clock = pygame.time.Clock()
-
 
 
 class Bullet(pygame.sprite.Sprite):
@@ -38,8 +36,8 @@ class Enemy(pygame.sprite.Sprite):
         self.vy = random.randint(2,10)
         
     def update(self):
-        self.rect.x = self.vx
-        self.rect.y = self.vy
+        self.rect.x += self.vx
+        self.rect.y += self.vy
 
 class Player(pygame.sprite.Sprite):    
     def __init__(self):
@@ -54,7 +52,7 @@ class Player(pygame.sprite.Sprite):
         key_state = pygame.key.get_pressed()
         if key_state[pygame.K_LEFT]:
             self.rect.x -= 5
-        if key_state[pygame.K_LEFT]:
+        if key_state[pygame.K_RIGHT]:
             self.rect.x += 5
         if self.rect.right > SCREEN_WIDTH:
             self.rect.right = SCREEN_WIDTH
@@ -65,21 +63,33 @@ class Player(pygame.sprite.Sprite):
         bullet = Bullet(self.rect.centerx,self.rect.centery)
         bullets.add(bullet)
 
-def player_input(event_list):
-    global arrow_key_status
+pygame.init()
+screen = pygame.display.set_mode(SCREEN_SIZE)
+pygame.display.set_caption('Space Shooter')
+clock = pygame.time.Clock()
+
+player = Player()
+enemies = pygame.sprite.Group()
+for i in range(10):
+    enemy = Enemy()
+    enemies.add(enemy)
+bullets = pygame.sprite.Group()
+
+game_over = False
+while not game_over:
+    clock.tick(60)
+    event_list = pygame.event.get()
     for event in event_list:
         if event.type == pygame.QUIT:
             game_over = True
-            return game_over
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 game_over = True
-                return game_over
             if event.key == pygame.K_SPACE:
                 player.shoot()
         if event.type == pygame.MOUSEMOTION:
             mouse_pos = event.pos
-        elif event.type == pygame.KEYDOWN:
+        if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 game_over = True
             elif event.key == pygame.K_UP:
@@ -100,9 +110,6 @@ def player_input(event_list):
             elif event.key == pygame.K_RIGHT:
                 arrow_key_status[3] = 0
 
-def player_move():
-    global center_x
-    global center_y
     if arrow_key_status[0]:
         center_y -=1
     if arrow_key_status[1]:
@@ -112,43 +119,24 @@ def player_move():
     if arrow_key_status[3]:
         center_x +=1
 
-def main():
-    pygame.init()
-    screen = pygame.display.set_mode(SCREEN_SIZE)
-    pygame.display.set_caption('Space Shooter')
-
-    player = Player()
-    enemys = pygame.sprite.Group()
-    for i in range(10):
-        enemy = Enemy()
-        enemys.add(enemy)
-    bullets = pygame.sprite.Group()
     
-    game_over = False
-    while not game_over:
-        clock.tick(60)
-        event_list = pygame.event.get()
-        game_over = player_input(event_list)
-        player_move()
-        
-        screen.fill(WHITE)
+    screen.fill(WHITE)
 
-        player.update()
-        enemys.update()
-        bullets.update()
+    player.update()
+    enemies.update()
+    bullets.update()
 
-        hits = pygame.sprite.spritecollide(player, enemys, False)
-        if hits:
-            game_over = True
-        pygame.sprite.groupcollide(enemys, bullets, True, True)
-        
-        screen.blit(player.image,player.rect)
-        enemys.draw(screen)
-        bullets.draw(screen)
-        
-        pygame.display.flip()
-        if game_over == True:
-            pygame.display.quit()
+    hits = pygame.sprite.spritecollide(player, enemies, False)
+    if hits:
+        game_over = True
+    if pygame.sprite.groupcollide(enemies, bullets, True, True):
+        for i in range(2):
+            enemy = Enemy()
+            enemies.add(enemy)
+        enemies.update()
+    screen.blit(player.image,player.rect)
+    enemies.draw(screen)
+    bullets.draw(screen)
+    
+    pygame.display.flip()
 
-if __name__ == '__main__':
-    main()
